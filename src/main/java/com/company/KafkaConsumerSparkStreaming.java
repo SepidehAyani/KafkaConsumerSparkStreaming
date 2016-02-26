@@ -37,41 +37,23 @@ package com.company;
   public class KafkaConsumerSparkStreaming {
       public static void main(String[] args) throws Exception {
 
-    if (args.length < 3) {
-      System.err.println("Usage: KafkaConsumer <brokers> <topics> <numThreads>");
+    if (args.length < 2) {
+      System.err.println("Usage: KafkaConsumer <brokers> <topics>");
       System.exit(1);
     }
-    //Defining properties
-    Properties props = new Properties();
-    props.put("zookeeper.hosts", "10.252.1.136");
-    props.put("zookeeper.port", "2181");
-    props.put("zookeeper.broker.path", "/brokers");
-    props.put("kafka.topic", "test-topic");
-    props.put("kafka.consumer.id", "test-id");
-    props.put("zookeeper.consumer.connection", "10.252.5.113:2182");
-    props.put("zookeeper.consumer.path", "/spark-kafka");
-    // Optional Properties
-    props.put("consumer.forcefromstart", "true");
-    props.put("consumer.fetchsizebytes", "1048576");
-    props.put("consumer.fillfreqms", "250");
-    props.put("consumer.backpressure.enabled", "true");
 
-    String brokers = args[0];
+        String brokers = args[0];
+        String topics = args[1];
+
 
     //Configure the Streaming Context
     SparkConf sparkConf = new SparkConf().setAppName("KafkaConsumer");
     //Create the context with 2 seconds batch size
     JavaStreamingContext jsc = new JavaStreamingContext(sparkConf, new Duration(10000));
 
-    int numThreads = Integer.parseInt(args[2]);
-
-    final Map<String, Integer> topicMap = new HashMap<String, Integer>();
-    Map<String, String> kafkaParams = new HashMap<String, String>();
-    kafkaParams.put("metadata.broker.list", brokers);
-
-    String[] topics = args[1].split(",");
-    for (String topic: topics) {topicMap.put(topic, numThreads);
-    }
+        HashSet<String> topicsSet = new HashSet<String>(Arrays.asList(topics.split(",")));
+        HashMap<String, String> kafkaParams = new HashMap<String, String>();
+        kafkaParams.put("metadata.broker.list", brokers);
 
       JavaPairInputDStream<String, String> messages = KafkaUtils.createDirectStream(
               jsc,
@@ -80,7 +62,7 @@ package com.company;
               StringDecoder.class,
               StringDecoder.class,
               kafkaParams,
-              new HashSet<String>()
+              topicsSet
       );
 
       JavaDStream<String> lines = messages.map(new Function<Tuple2<String, String>, String>() {
