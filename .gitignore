@@ -34,3 +34,4 @@ dependency-reduced-pom.xml
 
 container/runInfo
 container/var
+.idea/
